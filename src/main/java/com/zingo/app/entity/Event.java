@@ -1,0 +1,37 @@
+package com.zingo.app.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+@Entity
+@Table(name = "events")
+@Getter
+@Setter
+@NoArgsConstructor
+public class Event {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
+  @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
+  private EventType type;
+
+  @Column(nullable = false, length = 200)
+  private String title;
+
+  @Column(length = 500)
+  private String posterUrl;
+}
