@@ -1,1 +1,0 @@
-ALTER TABLE profiles MODIFY COLUMN avatar_url MEDIUMTEXT;
