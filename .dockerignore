@@ -1,0 +1,10 @@
+target
+.git
+.idea
+*.iml
+.settings
+.classpath
+.project
+node_modules
+frontend
+docker-compose.yml
