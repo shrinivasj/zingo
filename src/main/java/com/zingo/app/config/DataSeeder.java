@@ -43,6 +43,8 @@ public class DataSeeder implements CommandLineRunner {
 
     City city = new City();
     city.setName("Pune");
+    city.setPostalCode("411001");
+    city.setTimeZone("Asia/Kolkata");
     city = cityRepository.save(city);
 
     List<Venue> venues = new ArrayList<>();
@@ -57,6 +59,7 @@ public class DataSeeder implements CommandLineRunner {
       Venue venue = new Venue();
       venue.setCityId(city.getId());
       venue.setName(name);
+      venue.setPostalCode(city.getPostalCode());
       venues.add(venueRepository.save(venue));
     }
 

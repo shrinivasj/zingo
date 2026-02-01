@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: ${DB_USER:zingo}
-    password: ${DB_PASSWORD:zingo}
+    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:zingo}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:zingo}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -30,6 +30,29 @@ app:
     cooldownSeconds: 30
   lobby:
     presenceTtlMinutes: 15
+
+scrape:
+  enabled: true
+  cron: "0 0 12 * * *"
+  zone: "Asia/Kolkata"
+  days: 7
+  maxDetailPages: 25
+  pincodes: []
+  postalCodeCityMap: {}
+  pincodeLookup:
+    enabled: true
+    baseUrl: "https://api.postalpincode.in/pincode/"
+  providers:
+    bookmyshow:
+      enabled: true
+      baseUrl: "https://in.bookmyshow.com"
+      moviesPathTemplate: "/explore/movies-{citySlug}"
+      eventsPathTemplate: "/explore/events-{citySlug}"
+    district:
+      enabled: true
+      baseUrl: "https://www.district.in"
+      moviesPathTemplate: "/movies/{citySlug}-movie-tickets"
+      eventsPathTemplate: "/activities/{citySlug}-activity-tickets"
 
 logging:
   level:

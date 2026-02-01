@@ -34,6 +34,16 @@ public class DiscoveryService {
     return cityRepository.findAll();
   }
 
+  public Long resolveCityId(String cityName, String postalCode) {
+    if (postalCode != null && !postalCode.isBlank()) {
+      return cityRepository.findFirstByPostalCode(postalCode).map(City::getId).orElse(null);
+    }
+    if (cityName != null && !cityName.isBlank()) {
+      return cityRepository.findFirstByNameIgnoreCase(cityName).map(City::getId).orElse(null);
+    }
+    return null;
+  }
+
   public List<Venue> listVenues(Long cityId) {
     if (cityId == null) {
       return venueRepository.findAll();
@@ -70,6 +80,23 @@ public class DiscoveryService {
     return events;
   }
 
+  public List<Event> listEventsByType(Long cityId, EventType type) {
+    if (type == null) {
+      return listEvents(cityId);
+    }
+    if (cityId == null) {
+      return eventRepository.findByType(type);
+    }
+    List<Event> events = listEvents(cityId);
+    List<Event> filtered = new ArrayList<>();
+    for (Event event : events) {
+      if (event.getType() == type) {
+        filtered.add(event);
+      }
+    }
+    return filtered;
+  }
+
   public List<Event> listMovies(Long cityId) {
     if (cityId == null) {
       return eventRepository.findByType(EventType.MOVIE);
@@ -84,15 +111,37 @@ public class DiscoveryService {
     return filtered;
   }
 
-  public List<Showtime> listShowtimes(Long eventId, Long venueId) {
+  public List<Showtime> listShowtimes(Long eventId, Long venueId, Long cityId) {
     if (eventId != null && venueId != null) {
       return showtimeRepository.findByEventIdAndVenueId(eventId, venueId);
     }
     if (eventId != null) {
-      return showtimeRepository.findByEventId(eventId);
+      if (cityId == null) {
+        return showtimeRepository.findByEventId(eventId);
+      }
+      List<Venue> venues = venueRepository.findByCityId(cityId);
+      if (venues.isEmpty()) {
+        return List.of();
+      }
+      List<Long> venueIds = new ArrayList<>();
+      for (Venue venue : venues) {
+        venueIds.add(venue.getId());
+      }
+      return showtimeRepository.findByEventIdAndVenueIdIn(eventId, venueIds);
     }
     if (venueId != null) {
       return showtimeRepository.findByVenueId(venueId);
+    }
+    if (cityId != null) {
+      List<Venue> venues = venueRepository.findByCityId(cityId);
+      if (venues.isEmpty()) {
+        return List.of();
+      }
+      List<Long> venueIds = new ArrayList<>();
+      for (Venue venue : venues) {
+        venueIds.add(venue.getId());
+      }
+      return showtimeRepository.findByVenueIdIn(venueIds);
     }
     return showtimeRepository.findAll();
   }

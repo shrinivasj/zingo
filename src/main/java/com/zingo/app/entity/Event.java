@@ -34,4 +34,13 @@ public class Event {
 
   @Column(length = 500)
   private String posterUrl;
+
+  @Column(length = 20)
+  private String source;
+
+  @Column(length = 120)
+  private String sourceId;
+
+  @Column(length = 500)
+  private String sourceUrl;
 }

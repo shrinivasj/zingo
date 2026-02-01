@@ -1,0 +1,41 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expirationMinutes: 240
+  invites:
+    dailyLimit: 5
+    cooldownSeconds: 30
+  lobby:
+    presenceTtlMinutes: 15
+
+scrape:
+  enabled: ${SCRAPE_ENABLED:true}
+  cron: ${SCRAPE_CRON:0 0 12 * * *}
+  zone: ${SCRAPE_ZONE:Asia/Kolkata}
+  days: ${SCRAPE_DAYS:7}
+  maxDetailPages: ${SCRAPE_MAX_DETAIL_PAGES:25}
+  pincodeLookup:
+    enabled: ${SCRAPE_PINCODE_LOOKUP_ENABLED:true}
+    baseUrl: ${SCRAPE_PINCODE_LOOKUP_URL:https://api.postalpincode.in/pincode/}
+
+logging:
+  level:
+    root: INFO

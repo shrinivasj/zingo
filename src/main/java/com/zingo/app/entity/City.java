@@ -22,4 +22,10 @@ public class City {
 
   @Column(nullable = false, length = 120)
   private String name;
+
+  @Column(length = 10)
+  private String postalCode;
+
+  @Column(length = 64)
+  private String timeZone;
 }

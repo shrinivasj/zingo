@@ -38,4 +38,13 @@ public class Showtime {
   @JdbcTypeCode(SqlTypes.VARCHAR)
   @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
   private ShowFormat format;
+
+  @Column(length = 20)
+  private String source;
+
+  @Column(length = 120)
+  private String sourceId;
+
+  @Column(length = 500)
+  private String sourceUrl;
 }

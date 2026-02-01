@@ -25,4 +25,19 @@ public class Venue {
 
   @Column(nullable = false, length = 160)
   private String name;
+
+  @Column(length = 255)
+  private String address;
+
+  @Column(length = 10)
+  private String postalCode;
+
+  @Column(length = 20)
+  private String source;
+
+  @Column(length = 120)
+  private String sourceId;
+
+  @Column(length = 500)
+  private String sourceUrl;
 }

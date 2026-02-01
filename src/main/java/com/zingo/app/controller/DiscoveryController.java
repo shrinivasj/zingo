@@ -6,6 +6,7 @@ import com.zingo.app.dto.DiscoveryDtos.ShowtimeDto;
 import com.zingo.app.dto.DiscoveryDtos.VenueDto;
 import com.zingo.app.entity.City;
 import com.zingo.app.entity.Event;
+import com.zingo.app.entity.EventType;
 import com.zingo.app.entity.Showtime;
 import com.zingo.app.entity.Venue;
 import com.zingo.app.service.DiscoveryService;
@@ -30,19 +31,30 @@ public class DiscoveryController {
   }
 
   @GetMapping("/venues")
-  public List<VenueDto> venues(@RequestParam(required = false, name = "cityId") Long cityId) {
-    return discoveryService.listVenues(cityId).stream().map(this::toVenueDto).toList();
+  public List<VenueDto> venues(@RequestParam(required = false, name = "cityId") Long cityId,
+      @RequestParam(required = false, name = "city") String cityName,
+      @RequestParam(required = false, name = "postalCode") String postalCode) {
+    Long resolvedCityId = cityId != null ? cityId : discoveryService.resolveCityId(cityName, postalCode);
+    return discoveryService.listVenues(resolvedCityId).stream().map(this::toVenueDto).toList();
   }
 
   @GetMapping("/events")
-  public List<EventDto> events(@RequestParam(required = false, name = "cityId") Long cityId) {
-    return discoveryService.listMovies(cityId).stream().map(this::toEventDto).toList();
+  public List<EventDto> events(@RequestParam(required = false, name = "cityId") Long cityId,
+      @RequestParam(required = false, name = "city") String cityName,
+      @RequestParam(required = false, name = "postalCode") String postalCode,
+      @RequestParam(required = false, name = "type") String type) {
+    Long resolvedCityId = cityId != null ? cityId : discoveryService.resolveCityId(cityName, postalCode);
+    EventType eventType = parseEventType(type);
+    return discoveryService.listEventsByType(resolvedCityId, eventType).stream().map(this::toEventDto).toList();
   }
 
   @GetMapping("/showtimes")
   public List<ShowtimeDto> showtimes(@RequestParam(required = false, name = "eventId") Long eventId,
-      @RequestParam(required = false, name = "venueId") Long venueId) {
-    return discoveryService.listShowtimes(eventId, venueId).stream().map(this::toShowtimeDto).toList();
+      @RequestParam(required = false, name = "venueId") Long venueId,
+      @RequestParam(required = false, name = "city") String cityName,
+      @RequestParam(required = false, name = "postalCode") String postalCode) {
+    Long resolvedCityId = discoveryService.resolveCityId(cityName, postalCode);
+    return discoveryService.listShowtimes(eventId, venueId, resolvedCityId).stream().map(this::toShowtimeDto).toList();
   }
 
   private CityDto toCityDto(City city) {
@@ -60,5 +72,16 @@ public class DiscoveryController {
   private ShowtimeDto toShowtimeDto(Showtime showtime) {
     return new ShowtimeDto(showtime.getId(), showtime.getEventId(), showtime.getVenueId(), showtime.getStartsAt(),
         showtime.getFormat());
+  }
+
+  private EventType parseEventType(String type) {
+    if (type == null || type.isBlank()) {
+      return null;
+    }
+    try {
+      return EventType.valueOf(type.trim().toUpperCase());
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
   }
 }
