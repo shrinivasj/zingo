@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
- url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
+    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:zingo}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:zingo}}
   jpa:
