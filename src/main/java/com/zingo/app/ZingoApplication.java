@@ -11,3 +11,4 @@ public class ZingoApplication {
     SpringApplication.run(ZingoApplication.class, args);
   }
 }
+

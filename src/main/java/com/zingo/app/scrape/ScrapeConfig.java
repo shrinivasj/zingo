@@ -105,6 +105,7 @@ public class ScrapeConfig {
   public static class Providers {
     private BookMyShow bookmyshow = new BookMyShow();
     private District district = new District();
+    private MovieGlu movieglu = new MovieGlu();
 
     public BookMyShow getBookmyshow() {
       return bookmyshow;
@@ -120,6 +121,14 @@ public class ScrapeConfig {
 
     public void setDistrict(District district) {
       this.district = district;
+    }
+
+    public MovieGlu getMovieglu() {
+      return movieglu;
+    }
+
+    public void setMovieglu(MovieGlu movieglu) {
+      this.movieglu = movieglu;
     }
   }
 
@@ -198,6 +207,153 @@ public class ScrapeConfig {
 
     public void setEventsPathTemplate(String eventsPathTemplate) {
       this.eventsPathTemplate = eventsPathTemplate;
+    }
+  }
+
+  public static class MovieGlu {
+    private boolean enabled = false;
+    private String baseUrl = "https://api-gate2.movieglu.com/";
+    private boolean useSandbox = false;
+    private String client = "";
+    private String apiKey = "";
+    private String authorization = "";
+    private String territory = "IN";
+    private String apiVersion = "v201";
+    private String geolocation = "20.59;78.96";
+    private String sandboxClient = "";
+    private String sandboxApiKey = "";
+    private String sandboxAuthorization = "";
+    private String sandboxTerritory = "XX";
+    private String sandboxApiVersion = "v201";
+    private String sandboxGeolocation = "-22.0;14.0";
+    private int maxCinemas = 10;
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public String getBaseUrl() {
+      return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+      this.baseUrl = baseUrl;
+    }
+
+    public boolean isUseSandbox() {
+      return useSandbox;
+    }
+
+    public void setUseSandbox(boolean useSandbox) {
+      this.useSandbox = useSandbox;
+    }
+
+    public String getClient() {
+      return client;
+    }
+
+    public void setClient(String client) {
+      this.client = client;
+    }
+
+    public String getApiKey() {
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
+
+    public String getAuthorization() {
+      return authorization;
+    }
+
+    public void setAuthorization(String authorization) {
+      this.authorization = authorization;
+    }
+
+    public String getTerritory() {
+      return territory;
+    }
+
+    public void setTerritory(String territory) {
+      this.territory = territory;
+    }
+
+    public String getApiVersion() {
+      return apiVersion;
+    }
+
+    public void setApiVersion(String apiVersion) {
+      this.apiVersion = apiVersion;
+    }
+
+    public String getGeolocation() {
+      return geolocation;
+    }
+
+    public void setGeolocation(String geolocation) {
+      this.geolocation = geolocation;
+    }
+
+    public String getSandboxClient() {
+      return sandboxClient;
+    }
+
+    public void setSandboxClient(String sandboxClient) {
+      this.sandboxClient = sandboxClient;
+    }
+
+    public String getSandboxApiKey() {
+      return sandboxApiKey;
+    }
+
+    public void setSandboxApiKey(String sandboxApiKey) {
+      this.sandboxApiKey = sandboxApiKey;
+    }
+
+    public String getSandboxAuthorization() {
+      return sandboxAuthorization;
+    }
+
+    public void setSandboxAuthorization(String sandboxAuthorization) {
+      this.sandboxAuthorization = sandboxAuthorization;
+    }
+
+    public String getSandboxTerritory() {
+      return sandboxTerritory;
+    }
+
+    public void setSandboxTerritory(String sandboxTerritory) {
+      this.sandboxTerritory = sandboxTerritory;
+    }
+
+    public String getSandboxApiVersion() {
+      return sandboxApiVersion;
+    }
+
+    public void setSandboxApiVersion(String sandboxApiVersion) {
+      this.sandboxApiVersion = sandboxApiVersion;
+    }
+
+    public String getSandboxGeolocation() {
+      return sandboxGeolocation;
+    }
+
+    public void setSandboxGeolocation(String sandboxGeolocation) {
+      this.sandboxGeolocation = sandboxGeolocation;
+    }
+
+    public int getMaxCinemas() {
+      return maxCinemas;
+    }
+
+    public void setMaxCinemas(int maxCinemas) {
+      this.maxCinemas = maxCinemas;
     }
   }
 

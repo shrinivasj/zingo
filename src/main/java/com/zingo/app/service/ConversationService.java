@@ -20,7 +20,11 @@ import com.zingo.app.repository.ShowtimeRepository;
 import com.zingo.app.repository.VenueRepository;
 import com.zingo.app.security.SecurityUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -84,17 +88,68 @@ public class ConversationService {
   public List<ConversationDto> listForCurrentUser() {
     Long userId = SecurityUtil.currentUserId();
     List<Conversation> conversations = conversationRepository.findByMember(userId);
+    if (conversations.isEmpty()) {
+      return List.of();
+    }
+
+    List<Long> conversationIds = conversations.stream().map(Conversation::getId).toList();
+
+    Map<Long, List<Long>> membersByConversation = new HashMap<>();
+    Set<Long> otherUserIds = new HashSet<>();
+    for (ConversationMember member : conversationMemberRepository.findByConversationIdIn(conversationIds)) {
+      membersByConversation.computeIfAbsent(member.getConversationId(), key -> new ArrayList<>()).add(member.getUserId());
+      if (!member.getUserId().equals(userId)) {
+        otherUserIds.add(member.getUserId());
+      }
+    }
+
+    Set<Long> showtimeIds = new HashSet<>();
+    for (Conversation conversation : conversations) {
+      showtimeIds.add(conversation.getShowtimeId());
+    }
+    Map<Long, Showtime> showtimeById = new HashMap<>();
+    for (Showtime showtime : showtimeRepository.findAllById(showtimeIds)) {
+      showtimeById.put(showtime.getId(), showtime);
+    }
+
+    Set<Long> eventIds = new HashSet<>();
+    Set<Long> venueIds = new HashSet<>();
+    for (Showtime showtime : showtimeById.values()) {
+      eventIds.add(showtime.getEventId());
+      venueIds.add(showtime.getVenueId());
+    }
+
+    Map<Long, Event> eventById = new HashMap<>();
+    for (Event event : eventRepository.findAllById(eventIds)) {
+      eventById.put(event.getId(), event);
+    }
+
+    Map<Long, Venue> venueById = new HashMap<>();
+    for (Venue venue : venueRepository.findAllById(venueIds)) {
+      venueById.put(venue.getId(), venue);
+    }
+
+    Map<Long, Profile> profileByUserId = new HashMap<>();
+    if (!otherUserIds.isEmpty()) {
+      for (Profile profile : profileRepository.findAllById(otherUserIds)) {
+        profileByUserId.put(profile.getUserId(), profile);
+      }
+    }
+
+    Map<Long, Message> lastMessageByConversation = new HashMap<>();
+    for (Message message : messageRepository.findLatestByConversationIds(conversationIds)) {
+      lastMessageByConversation.put(message.getConversationId(), message);
+    }
+
     List<ConversationDto> dtos = new ArrayList<>();
     for (Conversation conversation : conversations) {
-      Showtime showtime = showtimeRepository.findById(conversation.getShowtimeId()).orElse(null);
-      Event event = showtime != null ? eventRepository.findById(showtime.getEventId()).orElse(null) : null;
-      Venue venue = showtime != null ? venueRepository.findById(showtime.getVenueId()).orElse(null) : null;
-      List<Long> members = conversationMemberRepository.findByConversationId(conversation.getId()).stream()
-          .map(ConversationMember::getUserId)
-          .toList();
+      Showtime showtime = showtimeById.get(conversation.getShowtimeId());
+      Event event = showtime != null ? eventById.get(showtime.getEventId()) : null;
+      Venue venue = showtime != null ? venueById.get(showtime.getVenueId()) : null;
+      List<Long> members = membersByConversation.getOrDefault(conversation.getId(), List.of());
       Long otherUserId = members.stream().filter(id -> !id.equals(userId)).findFirst().orElse(null);
-      Profile otherProfile = otherUserId != null ? profileRepository.findById(otherUserId).orElse(null) : null;
-      Message lastMessage = messageRepository.findTopByConversationIdOrderByCreatedAtDesc(conversation.getId());
+      Profile otherProfile = otherUserId != null ? profileByUserId.get(otherUserId) : null;
+      Message lastMessage = lastMessageByConversation.get(conversation.getId());
       dtos.add(new ConversationDto(
           conversation.getId(),
           conversation.getShowtimeId(),
@@ -102,9 +157,11 @@ public class ConversationService {
           venue != null ? venue.getName() : null,
           showtime != null ? showtime.getStartsAt() : null,
           members,
+          otherUserId,
           otherProfile != null ? otherProfile.getDisplayName() : null,
           otherProfile != null ? otherProfile.getAvatarUrl() : null,
-          lastMessage != null ? lastMessage.getText() : null,
+          otherProfile != null ? otherProfile.getE2eePublicKey() : null,
+          lastMessage != null ? summarizeLastMessage(lastMessage.getText()) : null,
           lastMessage != null ? lastMessage.getCreatedAt() : null));
     }
     return dtos;
@@ -150,6 +207,16 @@ public class ConversationService {
   public MessageDto toDto(Message message) {
     return new MessageDto(message.getId(), message.getConversationId(), message.getSenderId(), message.getText(),
         message.getCreatedAt());
+  }
+
+  private String summarizeLastMessage(String text) {
+    if (text == null) {
+      return null;
+    }
+    if (text.startsWith("enc:v1:")) {
+      return "Encrypted message";
+    }
+    return text;
   }
 
   @Transactional

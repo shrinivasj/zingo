@@ -29,6 +29,9 @@ public class Profile {
   @Column(length = 140)
   private String bioShort;
 
+  @Column(columnDefinition = "mediumtext")
+  private String e2eePublicKey;
+
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(columnDefinition = "json")
   private List<String> personalityTags;

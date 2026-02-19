@@ -30,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       try {
         JwtService.JwtUser jwtUser = jwtService.parseToken(token);
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-            jwtUser.userId(), null, Collections.emptyList());
+            jwtUser, null, Collections.emptyList());
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(auth);
       } catch (Exception ignored) {

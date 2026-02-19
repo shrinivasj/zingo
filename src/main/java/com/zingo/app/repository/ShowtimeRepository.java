@@ -5,7 +5,9 @@ import com.zingo.app.entity.Showtime;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 
 public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
   List<Showtime> findByEventIdAndVenueId(Long eventId, Long venueId);
@@ -14,6 +16,10 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
   List<Showtime> findByStartsAtBetween(Instant start, Instant end);
   List<Showtime> findByVenueIdIn(List<Long> venueIds);
   List<Showtime> findByEventIdAndVenueIdIn(Long eventId, List<Long> venueIds);
+  @Query("select s from Showtime s join Venue v on v.id = s.venueId where v.cityId = :cityId")
+  List<Showtime> findByCityId(@Param("cityId") Long cityId);
+  @Query("select s from Showtime s join Venue v on v.id = s.venueId where s.eventId = :eventId and v.cityId = :cityId")
+  List<Showtime> findByEventIdAndCityId(@Param("eventId") Long eventId, @Param("cityId") Long cityId);
 
   Optional<Showtime> findBySourceAndSourceId(String source, String sourceId);
 

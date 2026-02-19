@@ -31,6 +31,9 @@ public class ProfileService {
     if (request.avatarUrl() != null) {
       profile.setAvatarUrl(request.avatarUrl());
     }
+    if (request.e2eePublicKey() != null) {
+      profile.setE2eePublicKey(request.e2eePublicKey());
+    }
     if (request.bioShort() != null) {
       profile.setBioShort(request.bioShort());
     }

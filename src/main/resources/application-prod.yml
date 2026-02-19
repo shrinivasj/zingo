@@ -20,6 +20,8 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expirationMinutes: 240
+  performance:
+    slowRequestMs: ${SLOW_REQUEST_MS:300}
   invites:
     dailyLimit: 5
     cooldownSeconds: 30
@@ -35,6 +37,34 @@ scrape:
   pincodeLookup:
     enabled: ${SCRAPE_PINCODE_LOOKUP_ENABLED:true}
     baseUrl: ${SCRAPE_PINCODE_LOOKUP_URL:https://api.postalpincode.in/pincode/}
+  providers:
+    bookmyshow:
+      enabled: ${SCRAPE_BOOKMYSHOW_ENABLED:false}
+      baseUrl: ${SCRAPE_BOOKMYSHOW_BASE_URL:https://in.bookmyshow.com}
+      moviesPathTemplate: ${SCRAPE_BOOKMYSHOW_MOVIES_PATH:/explore/movies-{citySlug}}
+      eventsPathTemplate: ${SCRAPE_BOOKMYSHOW_EVENTS_PATH:/explore/events-{citySlug}}
+    district:
+      enabled: ${SCRAPE_DISTRICT_ENABLED:false}
+      baseUrl: ${SCRAPE_DISTRICT_BASE_URL:https://www.district.in}
+      moviesPathTemplate: ${SCRAPE_DISTRICT_MOVIES_PATH:/movies/{citySlug}-movie-tickets}
+      eventsPathTemplate: ${SCRAPE_DISTRICT_EVENTS_PATH:/activities/{citySlug}-activity-tickets}
+    movieglu:
+      enabled: ${SCRAPE_MOVIEGLU_ENABLED:true}
+      baseUrl: ${SCRAPE_MOVIEGLU_BASE_URL:https://api-gate2.movieglu.com/}
+      useSandbox: ${MOVIEGLU_USE_SANDBOX:false}
+      client: ${MOVIEGLU_CLIENT:AURO_0}
+      apiKey: ${MOVIEGLU_API_KEY:ElXXU41Wx02Iz55CSbeUO1hhYnJGLHnOLgy8CGde}
+      authorization: ${MOVIEGLU_AUTHORIZATION:Basic QVVST18wOk05S0R5eEtwand0aA==}
+      territory: ${MOVIEGLU_TERRITORY:IN}
+      apiVersion: ${MOVIEGLU_API_VERSION:v201}
+      geolocation: ${MOVIEGLU_GEOLOCATION:20.59;78.96}
+      sandboxClient: ${MOVIEGLU_SANDBOX_CLIENT:${MOVIEGLU_CLIENT:}}
+      sandboxApiKey: ${MOVIEGLU_SANDBOX_API_KEY:${MOVIEGLU_API_KEY:}}
+      sandboxAuthorization: ${MOVIEGLU_SANDBOX_AUTHORIZATION:${MOVIEGLU_AUTHORIZATION:}}
+      sandboxTerritory: ${MOVIEGLU_SANDBOX_TERRITORY:XX}
+      sandboxApiVersion: ${MOVIEGLU_SANDBOX_API_VERSION:v201}
+      sandboxGeolocation: ${MOVIEGLU_SANDBOX_GEOLOCATION:-22.0;14.0}
+      maxCinemas: ${MOVIEGLU_MAX_CINEMAS:10}
 
 logging:
   level:

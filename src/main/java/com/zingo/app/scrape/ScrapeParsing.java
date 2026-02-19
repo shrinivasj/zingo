@@ -15,6 +15,7 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -23,6 +24,13 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public final class ScrapeParsing {
+  private static final Map<String, String> CITY_SLUG_ALIASES = Map.of(
+      "bangalore", "bengaluru",
+      "bombay", "mumbai",
+      "calcutta", "kolkata",
+      "madras", "chennai",
+      "gurgaon", "gurugram",
+      "trivandrum", "thiruvananthapuram");
   private static final DateTimeFormatter HUMAN_DATE_TIME = new DateTimeFormatterBuilder()
       .parseCaseInsensitive()
       .appendPattern("EEE, d MMM")
@@ -54,7 +62,8 @@ public final class ScrapeParsing {
     if (normalized.isEmpty()) {
       return null;
     }
-    return normalized.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+    String canonical = CITY_SLUG_ALIASES.getOrDefault(normalized, normalized);
+    return canonical.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
   }
 
   public static String resolveCityName(ScrapeRequest request, ScrapeConfig config) {

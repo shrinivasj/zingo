@@ -34,7 +34,7 @@ public class Message {
   @Column(nullable = false)
   private Long senderId;
 
-  @Column(nullable = false, length = 1000)
+  @Column(nullable = false, columnDefinition = "mediumtext")
   private String text;
 
   @Column(nullable = false)

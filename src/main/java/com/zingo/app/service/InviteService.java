@@ -6,12 +6,14 @@ import com.zingo.app.dto.InviteDtos.InviteRequest;
 import com.zingo.app.entity.Invite;
 import com.zingo.app.entity.InviteStatus;
 import com.zingo.app.entity.NotificationType;
+import com.zingo.app.entity.Event;
 import com.zingo.app.entity.Profile;
 import com.zingo.app.entity.Showtime;
 import com.zingo.app.exception.BadRequestException;
 import com.zingo.app.exception.NotFoundException;
 import com.zingo.app.exception.TooManyRequestsException;
 import com.zingo.app.repository.InviteRepository;
+import com.zingo.app.repository.EventRepository;
 import com.zingo.app.repository.ProfileRepository;
 import com.zingo.app.repository.ShowtimeRepository;
 import com.zingo.app.security.SecurityUtil;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InviteService {
   private final InviteRepository inviteRepository;
   private final ShowtimeRepository showtimeRepository;
+  private final EventRepository eventRepository;
   private final ProfileRepository profileRepository;
   private final SafetyService safetyService;
   private final NotificationService notificationService;
@@ -36,12 +39,14 @@ public class InviteService {
   private final int cooldownSeconds;
 
   public InviteService(InviteRepository inviteRepository, ShowtimeRepository showtimeRepository,
+      EventRepository eventRepository,
       ProfileRepository profileRepository, SafetyService safetyService, NotificationService notificationService,
       ConversationService conversationService,
       @Value("${app.invites.dailyLimit}") int dailyLimit,
       @Value("${app.invites.cooldownSeconds}") int cooldownSeconds) {
     this.inviteRepository = inviteRepository;
     this.showtimeRepository = showtimeRepository;
+    this.eventRepository = eventRepository;
     this.profileRepository = profileRepository;
     this.safetyService = safetyService;
     this.notificationService = notificationService;
@@ -63,6 +68,7 @@ public class InviteService {
         .orElseThrow(() -> new NotFoundException("User not found"));
     Showtime showtime = showtimeRepository.findById(request.showtimeId())
         .orElseThrow(() -> new NotFoundException("Showtime not found"));
+    Event event = eventRepository.findById(showtime.getEventId()).orElse(null);
 
     Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
     long invitesToday = inviteRepository.countByFromUserIdAndCreatedAtAfter(fromUserId, startOfDay);
@@ -88,8 +94,10 @@ public class InviteService {
     payload.put("inviteId", invite.getId());
     payload.put("fromUserId", fromUserId);
     payload.put("fromDisplayName", fromProfile != null ? fromProfile.getDisplayName() : "Someone");
+    payload.put("fromAvatarUrl", fromProfile != null ? fromProfile.getAvatarUrl() : null);
     payload.put("showtimeId", showtime.getId());
-    payload.put("startsAt", showtime.getStartsAt());
+    payload.put("startsAt", showtime.getStartsAt() != null ? showtime.getStartsAt().toString() : null);
+    payload.put("eventTitle", event != null ? event.getTitle() : null);
     notificationService.createAndSend(request.toUserId(), NotificationType.INVITE, payload);
 
     return toDto(invite);

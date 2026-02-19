@@ -9,13 +9,12 @@ import com.zingo.app.repository.CityRepository;
 import com.zingo.app.repository.EventRepository;
 import com.zingo.app.repository.ShowtimeRepository;
 import com.zingo.app.repository.VenueRepository;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class DiscoveryService {
   private final CityRepository cityRepository;
   private final VenueRepository venueRepository;
@@ -55,29 +54,7 @@ public class DiscoveryService {
     if (cityId == null) {
       return eventRepository.findAll();
     }
-    List<Venue> venues = venueRepository.findByCityId(cityId);
-    if (venues.isEmpty()) {
-      return List.of();
-    }
-    Set<Long> venueIds = new HashSet<>();
-    for (Venue venue : venues) {
-      venueIds.add(venue.getId());
-    }
-    List<Showtime> showtimes = showtimeRepository.findAll();
-    Set<Long> eventIds = new HashSet<>();
-    for (Showtime showtime : showtimes) {
-      if (venueIds.contains(showtime.getVenueId())) {
-        eventIds.add(showtime.getEventId());
-      }
-    }
-    if (eventIds.isEmpty()) {
-      return List.of();
-    }
-    List<Event> events = new ArrayList<>();
-    for (Long eventId : eventIds) {
-      eventRepository.findById(eventId).ifPresent(events::add);
-    }
-    return events;
+    return eventRepository.findDistinctByCityId(cityId);
   }
 
   public List<Event> listEventsByType(Long cityId, EventType type) {
@@ -87,28 +64,11 @@ public class DiscoveryService {
     if (cityId == null) {
       return eventRepository.findByType(type);
     }
-    List<Event> events = listEvents(cityId);
-    List<Event> filtered = new ArrayList<>();
-    for (Event event : events) {
-      if (event.getType() == type) {
-        filtered.add(event);
-      }
-    }
-    return filtered;
+    return eventRepository.findDistinctByCityIdAndType(cityId, type);
   }
 
   public List<Event> listMovies(Long cityId) {
-    if (cityId == null) {
-      return eventRepository.findByType(EventType.MOVIE);
-    }
-    List<Event> events = listEvents(cityId);
-    List<Event> filtered = new ArrayList<>();
-    for (Event event : events) {
-      if (event.getType() == EventType.MOVIE) {
-        filtered.add(event);
-      }
-    }
-    return filtered;
+    return listEventsByType(cityId, EventType.MOVIE);
   }
 
   public List<Showtime> listShowtimes(Long eventId, Long venueId, Long cityId) {
@@ -119,29 +79,13 @@ public class DiscoveryService {
       if (cityId == null) {
         return showtimeRepository.findByEventId(eventId);
       }
-      List<Venue> venues = venueRepository.findByCityId(cityId);
-      if (venues.isEmpty()) {
-        return List.of();
-      }
-      List<Long> venueIds = new ArrayList<>();
-      for (Venue venue : venues) {
-        venueIds.add(venue.getId());
-      }
-      return showtimeRepository.findByEventIdAndVenueIdIn(eventId, venueIds);
+      return showtimeRepository.findByEventIdAndCityId(eventId, cityId);
     }
     if (venueId != null) {
       return showtimeRepository.findByVenueId(venueId);
     }
     if (cityId != null) {
-      List<Venue> venues = venueRepository.findByCityId(cityId);
-      if (venues.isEmpty()) {
-        return List.of();
-      }
-      List<Long> venueIds = new ArrayList<>();
-      for (Venue venue : venues) {
-        venueIds.add(venue.getId());
-      }
-      return showtimeRepository.findByVenueIdIn(venueIds);
+      return showtimeRepository.findByCityId(cityId);
     }
     return showtimeRepository.findAll();
   }

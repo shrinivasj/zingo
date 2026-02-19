@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
+ url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:zingo}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:zingo}}
   jpa:
@@ -25,6 +25,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:dev-zingo-secret-change-me}
     expirationMinutes: 240
+  performance:
+    slowRequestMs: ${SLOW_REQUEST_MS:300}
   invites:
     dailyLimit: 5
     cooldownSeconds: 30
@@ -44,15 +46,32 @@ scrape:
     baseUrl: "https://api.postalpincode.in/pincode/"
   providers:
     bookmyshow:
-      enabled: true
+      enabled: false
       baseUrl: "https://in.bookmyshow.com"
       moviesPathTemplate: "/explore/movies-{citySlug}"
       eventsPathTemplate: "/explore/events-{citySlug}"
     district:
-      enabled: true
+      enabled: false
       baseUrl: "https://www.district.in"
       moviesPathTemplate: "/movies/{citySlug}-movie-tickets"
       eventsPathTemplate: "/activities/{citySlug}-activity-tickets"
+    movieglu:
+      enabled: true
+      baseUrl: "https://api-gate2.movieglu.com/"
+      useSandbox: ${MOVIEGLU_USE_SANDBOX:true}
+      client: "${MOVIEGLU_CLIENT:AURO_0}"
+      apiKey: "${MOVIEGLU_API_KEY:ElXXU41Wx02Iz55CSbeUO1hhYnJGLHnOLgy8CGde}"
+      authorization: "${MOVIEGLU_AUTHORIZATION:Basic QVVST18wOk05S0R5eEtwand0aA==}"
+      territory: "${MOVIEGLU_TERRITORY:IN}"
+      apiVersion: "${MOVIEGLU_API_VERSION:v201}"
+      geolocation: "${MOVIEGLU_GEOLOCATION:20.59;78.96}"
+      sandboxClient: "${MOVIEGLU_SANDBOX_CLIENT:${MOVIEGLU_CLIENT:}}"
+      sandboxApiKey: "${MOVIEGLU_SANDBOX_API_KEY:${MOVIEGLU_API_KEY:}}"
+      sandboxAuthorization: "${MOVIEGLU_SANDBOX_AUTHORIZATION:${MOVIEGLU_AUTHORIZATION:}}"
+      sandboxTerritory: "${MOVIEGLU_SANDBOX_TERRITORY:XX}"
+      sandboxApiVersion: "${MOVIEGLU_SANDBOX_API_VERSION:v201}"
+      sandboxGeolocation: "${MOVIEGLU_SANDBOX_GEOLOCATION:-22.0;14.0}"
+      maxCinemas: ${MOVIEGLU_MAX_CINEMAS:10}
 
 logging:
   level:

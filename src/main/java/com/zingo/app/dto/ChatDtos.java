@@ -12,8 +12,10 @@ public class ChatDtos {
       String venueName,
       Instant startsAt,
       List<Long> memberIds,
+      Long otherUserId,
       String otherUserName,
       String otherUserAvatarUrl,
+      String otherUserE2eePublicKey,
       String lastMessageText,
       Instant lastMessageAt) {}
 

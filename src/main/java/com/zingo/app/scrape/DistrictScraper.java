@@ -180,6 +180,7 @@ public class DistrictScraper implements ScrapeProvider {
     String fallbackVenueName = cityName != null ? "District Movies - " + cityName : "District Movies";
     String fallbackVenueSourceId = normalizeSourceId("district-movies|" + (citySlug != null ? citySlug : "default"));
     boolean fallbackVenueAdded = false;
+    int detailBudget = config.getMaxDetailPages();
 
     for (Element link : links) {
       String href = link.attr("href");
@@ -201,8 +202,12 @@ public class DistrictScraper implements ScrapeProvider {
       String posterUrl = extractPosterUrl(link);
       events.add(new ScrapedEvent(source(), sourceId, absolute, title, EventType.MOVIE, posterUrl));
 
-      boolean foundShowtimes = parseMovieDetailPage(absolute, sourceId, title, posterUrl, cityName, citySlug, zone,
-          events, venues, showtimes);
+      boolean foundShowtimes = false;
+      if (detailBudget > 0) {
+        detailBudget--;
+        foundShowtimes = parseMovieDetailPage(absolute, sourceId, title, posterUrl, cityName, citySlug, zone, events,
+            venues, showtimes);
+      }
       if (!foundShowtimes) {
         if (!fallbackVenueAdded) {
           venues.add(new ScrapedVenue(source(), fallbackVenueSourceId, url, fallbackVenueName, null, null));

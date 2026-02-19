@@ -60,6 +60,16 @@ public class LobbyService {
     return join(showtimeId);
   }
 
+  @Transactional
+  public LobbyPresenceUpdate leave(Long showtimeId) {
+    Long userId = SecurityUtil.currentUserId();
+    lobbyPresenceRepository.deleteByShowtimeIdAndUserId(showtimeId, userId);
+    long count = lobbyPresenceRepository.countByShowtimeId(showtimeId);
+    LobbyPresenceUpdate update = new LobbyPresenceUpdate(showtimeId, count, Instant.now());
+    messagingTemplate.convertAndSend("/topic/lobby." + showtimeId, update);
+    return update;
+  }
+
   public LobbyUsersResponse listUsers(Long showtimeId, int page, int size) {
     Long userId = SecurityUtil.currentUserId();
     Page<LobbyPresence> presencePage = lobbyPresenceRepository.findByShowtimeId(showtimeId, PageRequest.of(page, size));

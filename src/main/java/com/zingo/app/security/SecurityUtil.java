@@ -7,6 +7,11 @@ public final class SecurityUtil {
   private SecurityUtil() {}
 
   public static Long currentUserId() {
+    JwtService.JwtUser jwtUser = currentJwtUser();
+    if (jwtUser != null && jwtUser.userId() != null) {
+      return jwtUser.userId();
+    }
+
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth == null || auth.getPrincipal() == null) {
       return null;
@@ -16,6 +21,17 @@ public final class SecurityUtil {
     }
     if (auth.getPrincipal() instanceof String) {
       return Long.valueOf((String) auth.getPrincipal());
+    }
+    return null;
+  }
+
+  public static JwtService.JwtUser currentJwtUser() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || auth.getPrincipal() == null) {
+      return null;
+    }
+    if (auth.getPrincipal() instanceof JwtService.JwtUser jwtUser) {
+      return jwtUser;
     }
     return null;
   }

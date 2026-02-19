@@ -56,26 +56,41 @@ public class AuthService {
   }
 
   public AuthResponse login(LoginRequest request) {
-    User user = userRepository.findByEmail(request.email().toLowerCase())
+    String email = request.email().toLowerCase();
+    Object[] row = userRepository.findUserWithProfileByEmail(email)
         .orElseThrow(() -> new BadRequestException("Invalid credentials"));
+    UserProfilePair pair = unpackUserProfile(row);
+    User user = pair.user();
+    Profile profile = pair.profile();
     if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
       throw new BadRequestException("Invalid credentials");
     }
-    Profile profile = profileRepository.findById(user.getId())
-        .orElseThrow(() -> new NotFoundException("Profile not found"));
     String token = jwtService.generateToken(user.getId(), user.getEmail());
     return new AuthResponse(token, toUserDto(user, profile));
   }
 
   public UserDto me() {
-    Long userId = SecurityUtil.currentUserId();
-    if (userId == null) {
+    JwtService.JwtUser jwtUser = SecurityUtil.currentJwtUser();
+    if (jwtUser == null || jwtUser.userId() == null) {
       throw new BadRequestException("Not authenticated");
     }
-    User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+    Long userId = jwtUser.userId();
     Profile profile = profileRepository.findById(userId)
         .orElseThrow(() -> new NotFoundException("Profile not found"));
-    return toUserDto(user, profile);
+
+    String email = jwtUser.email();
+    if (email == null || email.isBlank()) {
+      User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+      email = user.getEmail();
+    }
+
+    return new UserDto(
+        userId,
+        email,
+        profile.getDisplayName(),
+        sanitizeAuthAvatar(profile.getAvatarUrl()),
+        profile.getBioShort(),
+        profile.getPersonalityTags());
   }
 
   public UserDto toUserDto(User user, Profile profile) {
@@ -83,8 +98,34 @@ public class AuthService {
         user.getId(),
         user.getEmail(),
         profile.getDisplayName(),
-        profile.getAvatarUrl(),
+        sanitizeAuthAvatar(profile.getAvatarUrl()),
         profile.getBioShort(),
         profile.getPersonalityTags());
   }
+
+  private String sanitizeAuthAvatar(String avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isBlank()) {
+      return avatarUrl;
+    }
+    // Prevent large inline base64 image payloads from slowing auth responses.
+    if (avatarUrl.startsWith("data:") || avatarUrl.length() > 2048) {
+      return null;
+    }
+    return avatarUrl;
+  }
+
+  private UserProfilePair unpackUserProfile(Object[] row) {
+    if (row.length >= 2 && row[0] instanceof User user && row[1] instanceof Profile profile) {
+      return new UserProfilePair(user, profile);
+    }
+    if (row.length >= 1 && row[0] instanceof Object[] nested
+        && nested.length >= 2
+        && nested[0] instanceof User user
+        && nested[1] instanceof Profile profile) {
+      return new UserProfilePair(user, profile);
+    }
+    throw new NotFoundException("Profile not found");
+  }
+
+  private record UserProfilePair(User user, Profile profile) {}
 }

@@ -32,6 +32,11 @@ public class LobbyController {
     return lobbyService.heartbeat(request.showtimeId());
   }
 
+  @PostMapping("/leave")
+  public LobbyPresenceUpdate leave(@Valid @RequestBody LobbyJoinRequest request) {
+    return lobbyService.leave(request.showtimeId());
+  }
+
   @GetMapping("/{showtimeId}/users")
   public LobbyUsersResponse users(@PathVariable Long showtimeId,
       @RequestParam(defaultValue = "0") int page,

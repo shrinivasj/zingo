@@ -11,5 +11,6 @@ public interface LobbyPresenceRepository extends JpaRepository<LobbyPresence, Lo
   Optional<LobbyPresence> findByShowtimeIdAndUserId(Long showtimeId, Long userId);
   Page<LobbyPresence> findByShowtimeId(Long showtimeId, Pageable pageable);
   long countByShowtimeId(Long showtimeId);
+  long deleteByShowtimeIdAndUserId(Long showtimeId, Long userId);
   long deleteByLastSeenAtBefore(Instant cutoff);
 }
