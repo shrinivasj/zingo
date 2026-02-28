@@ -2,6 +2,8 @@ package com.zingo.app.entity;
 
 public enum EventType {
   MOVIE,
+  CAFE,
+  TREK,
   PLAY,
   CONCERT,
   COMEDY,

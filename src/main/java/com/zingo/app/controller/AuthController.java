@@ -1,6 +1,9 @@
 package com.zingo.app.controller;
 
 import com.zingo.app.dto.AuthDtos.AuthResponse;
+import com.zingo.app.dto.AuthDtos.EmailOtpSendRequest;
+import com.zingo.app.dto.AuthDtos.EmailOtpSendResponse;
+import com.zingo.app.dto.AuthDtos.EmailOtpVerifyRequest;
 import com.zingo.app.dto.AuthDtos.LoginRequest;
 import com.zingo.app.dto.AuthDtos.RegisterRequest;
 import com.zingo.app.dto.AuthDtos.UserDto;
@@ -29,6 +32,16 @@ public class AuthController {
   @PostMapping("/login")
   public AuthResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request);
+  }
+
+  @PostMapping("/email-otp/request")
+  public EmailOtpSendResponse requestEmailOtp(@Valid @RequestBody EmailOtpSendRequest request) {
+    return authService.requestEmailOtp(request);
+  }
+
+  @PostMapping("/email-otp/verify")
+  public AuthResponse verifyEmailOtp(@Valid @RequestBody EmailOtpVerifyRequest request) {
+    return authService.verifyEmailOtp(request);
   }
 
   @GetMapping("/me")

@@ -9,9 +9,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(
@@ -21,9 +18,6 @@ import lombok.Setter;
       @Index(name = "idx_block_blocked", columnList = "blockedId")
     }
 )
-@Getter
-@Setter
-@NoArgsConstructor
 public class Block {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,5 +37,37 @@ public class Block {
     if (createdAt == null) {
       createdAt = Instant.now();
     }
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getBlockerId() {
+    return blockerId;
+  }
+
+  public void setBlockerId(Long blockerId) {
+    this.blockerId = blockerId;
+  }
+
+  public Long getBlockedId() {
+    return blockedId;
+  }
+
+  public void setBlockedId(Long blockedId) {
+    this.blockedId = blockedId;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
   }
 }

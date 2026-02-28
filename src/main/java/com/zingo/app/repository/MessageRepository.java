@@ -3,12 +3,14 @@ package com.zingo.app.repository;
 import com.zingo.app.entity.Message;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
   List<Message> findByConversationIdOrderByCreatedAtAsc(Long conversationId, Pageable pageable);
+  List<Message> findByConversationIdOrderByCreatedAtDesc(Long conversationId, Pageable pageable);
   Message findTopByConversationIdOrderByCreatedAtDesc(Long conversationId);
   @Query(
       value = """
@@ -26,5 +28,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
           """,
       nativeQuery = true)
   List<Message> findLatestByConversationIds(@Param("conversationIds") List<Long> conversationIds);
+
+  @Modifying
+  @Query("update Message m set m.conversationId = :targetConversationId where m.conversationId = :sourceConversationId")
+  int moveConversationMessages(@Param("sourceConversationId") Long sourceConversationId,
+      @Param("targetConversationId") Long targetConversationId);
+
   void deleteByConversationId(Long conversationId);
 }

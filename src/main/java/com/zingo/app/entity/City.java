@@ -28,4 +28,36 @@ public class City {
 
   @Column(length = 64)
   private String timeZone;
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getPostalCode() {
+    return postalCode;
+  }
+
+  public void setPostalCode(String postalCode) {
+    this.postalCode = postalCode;
+  }
+
+  public String getTimeZone() {
+    return timeZone;
+  }
+
+  public void setTimeZone(String timeZone) {
+    this.timeZone = timeZone;
+  }
 }

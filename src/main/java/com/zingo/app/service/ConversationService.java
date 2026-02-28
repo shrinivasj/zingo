@@ -20,11 +20,13 @@ import com.zingo.app.repository.ShowtimeRepository;
 import com.zingo.app.repository.VenueRepository;
 import com.zingo.app.security.SecurityUtil;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Comparator;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ public class ConversationService {
   private final VenueRepository venueRepository;
   private final SafetyService safetyService;
   private final SimpMessagingTemplate messagingTemplate;
+  private final PushDeliveryService pushDeliveryService;
 
   public ConversationService(ConversationRepository conversationRepository,
       ConversationMemberRepository conversationMemberRepository,
@@ -50,7 +53,8 @@ public class ConversationService {
       EventRepository eventRepository,
       VenueRepository venueRepository,
       SafetyService safetyService,
-      SimpMessagingTemplate messagingTemplate) {
+      SimpMessagingTemplate messagingTemplate,
+      PushDeliveryService pushDeliveryService) {
     this.conversationRepository = conversationRepository;
     this.conversationMemberRepository = conversationMemberRepository;
     this.messageRepository = messageRepository;
@@ -60,29 +64,76 @@ public class ConversationService {
     this.venueRepository = venueRepository;
     this.safetyService = safetyService;
     this.messagingTemplate = messagingTemplate;
+    this.pushDeliveryService = pushDeliveryService;
   }
 
   @Transactional
   public Long openConversation(Long showtimeId, Long userA, Long userB) {
-    return conversationRepository.findExisting(showtimeId, userA, userB)
-        .map(Conversation::getId)
-        .orElseGet(() -> {
-          Conversation conversation = new Conversation();
-          conversation.setShowtimeId(showtimeId);
-          Conversation saved = conversationRepository.save(conversation);
+    List<Conversation> existing = conversationRepository.findExistingByUsers(userA, userB);
+    if (!existing.isEmpty()) {
+      Conversation primary = existing.get(0);
+      if (showtimeId != null && !showtimeId.equals(primary.getShowtimeId())) {
+        primary.setShowtimeId(showtimeId);
+        conversationRepository.save(primary);
+      }
 
-          ConversationMember memberA = new ConversationMember();
-          memberA.setConversationId(saved.getId());
-          memberA.setUserId(userA);
-          conversationMemberRepository.save(memberA);
+      // Deduplicate historic duplicate threads for the same pair by merging into primary.
+      if (existing.size() > 1) {
+        for (int i = 1; i < existing.size(); i++) {
+          Conversation duplicate = existing.get(i);
+          if (duplicate.getId().equals(primary.getId())) {
+            continue;
+          }
+          messageRepository.moveConversationMessages(duplicate.getId(), primary.getId());
+          conversationMemberRepository.deleteByConversationId(duplicate.getId());
+          conversationRepository.deleteById(duplicate.getId());
+        }
+      }
+      return primary.getId();
+    }
 
-          ConversationMember memberB = new ConversationMember();
-          memberB.setConversationId(saved.getId());
-          memberB.setUserId(userB);
-          conversationMemberRepository.save(memberB);
+    Conversation conversation = new Conversation();
+    conversation.setShowtimeId(showtimeId);
+    Conversation saved = conversationRepository.save(conversation);
 
-          return saved.getId();
-        });
+    ConversationMember memberA = new ConversationMember();
+    memberA.setConversationId(saved.getId());
+    memberA.setUserId(userA);
+    conversationMemberRepository.save(memberA);
+
+    ConversationMember memberB = new ConversationMember();
+    memberB.setConversationId(saved.getId());
+    memberB.setUserId(userB);
+    conversationMemberRepository.save(memberB);
+
+    return saved.getId();
+  }
+
+  @Transactional
+  public Long createGroupConversation(Long showtimeId, Long hostUserId) {
+    Conversation conversation = new Conversation();
+    conversation.setShowtimeId(showtimeId);
+    Conversation saved = conversationRepository.save(conversation);
+
+    ConversationMember hostMember = new ConversationMember();
+    hostMember.setConversationId(saved.getId());
+    hostMember.setUserId(hostUserId);
+    conversationMemberRepository.save(hostMember);
+    return saved.getId();
+  }
+
+  @Transactional
+  public void addMemberToConversation(Long conversationId, Long userId) {
+    if (conversationId == null || userId == null) {
+      return;
+    }
+    if (conversationMemberRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+      return;
+    }
+    ConversationMember member = new ConversationMember();
+    member.setConversationId(conversationId);
+    member.setUserId(userId);
+    conversationMemberRepository.save(member);
   }
 
   public List<ConversationDto> listForCurrentUser() {
@@ -147,6 +198,29 @@ public class ConversationService {
       Event event = showtime != null ? eventById.get(showtime.getEventId()) : null;
       Venue venue = showtime != null ? venueById.get(showtime.getVenueId()) : null;
       List<Long> members = membersByConversation.getOrDefault(conversation.getId(), List.of());
+      List<String> participantNames = members.stream()
+          .filter(id -> !id.equals(userId))
+          .map(profileByUserId::get)
+          .filter(java.util.Objects::nonNull)
+          .map(Profile::getDisplayName)
+          .filter(name -> name != null && !name.isBlank())
+          .distinct()
+          .toList();
+      Map<Long, String> participantNameByUserId = new HashMap<>();
+      for (Long memberId : members) {
+        if (memberId == null) {
+          continue;
+        }
+        if (memberId.equals(userId)) {
+          Profile self = profileRepository.findById(memberId).orElse(null);
+          participantNameByUserId.put(memberId, self != null ? self.getDisplayName() : "You");
+          continue;
+        }
+        Profile memberProfile = profileByUserId.get(memberId);
+        if (memberProfile != null && memberProfile.getDisplayName() != null && !memberProfile.getDisplayName().isBlank()) {
+          participantNameByUserId.put(memberId, memberProfile.getDisplayName());
+        }
+      }
       Long otherUserId = members.stream().filter(id -> !id.equals(userId)).findFirst().orElse(null);
       Profile otherProfile = otherUserId != null ? profileByUserId.get(otherUserId) : null;
       Message lastMessage = lastMessageByConversation.get(conversation.getId());
@@ -154,9 +228,12 @@ public class ConversationService {
           conversation.getId(),
           conversation.getShowtimeId(),
           event != null ? event.getTitle() : null,
+          event != null ? event.getPosterUrl() : null,
           venue != null ? venue.getName() : null,
           showtime != null ? showtime.getStartsAt() : null,
           members,
+          participantNames,
+          participantNameByUserId,
           otherUserId,
           otherProfile != null ? otherProfile.getDisplayName() : null,
           otherProfile != null ? otherProfile.getAvatarUrl() : null,
@@ -164,15 +241,47 @@ public class ConversationService {
           lastMessage != null ? summarizeLastMessage(lastMessage.getText()) : null,
           lastMessage != null ? lastMessage.getCreatedAt() : null));
     }
+    dtos.sort((a, b) -> {
+      boolean aHasLast = a.lastMessageAt() != null;
+      boolean bHasLast = b.lastMessageAt() != null;
+      if (aHasLast != bHasLast) {
+        return bHasLast ? 1 : -1;
+      }
+
+      if (aHasLast && bHasLast) {
+        int byLast = Comparator.<java.time.Instant>nullsLast(Comparator.naturalOrder())
+            .compare(b.lastMessageAt(), a.lastMessageAt());
+        if (byLast != 0) {
+          return byLast;
+        }
+      } else {
+        int byStart = Comparator.<java.time.Instant>nullsLast(Comparator.naturalOrder())
+            .compare(b.startsAt(), a.startsAt());
+        if (byStart != 0) {
+          return byStart;
+        }
+      }
+      return Comparator.<Long>nullsLast(Comparator.reverseOrder()).compare(a.id(), b.id());
+    });
     return dtos;
   }
 
   public List<MessageDto> listMessages(Long conversationId, int page, int size) {
     Long userId = SecurityUtil.currentUserId();
     ensureMember(conversationId, userId);
-    return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId, PageRequest.of(page, size)).stream()
-        .map(this::toDto)
-        .toList();
+    List<Message> pageItems = messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId, PageRequest.of(page, size));
+    Collections.reverse(pageItems);
+    Set<Long> senderIds = new HashSet<>();
+    for (Message message : pageItems) {
+      if (message.getSenderId() != null) {
+        senderIds.add(message.getSenderId());
+      }
+    }
+    Map<Long, String> senderNameById = new HashMap<>();
+    for (Profile profile : profileRepository.findAllById(senderIds)) {
+      senderNameById.put(profile.getUserId(), profile.getDisplayName());
+    }
+    return pageItems.stream().map((message) -> toDto(message, senderNameById.get(message.getSenderId()))).toList();
   }
 
   @Transactional
@@ -193,8 +302,18 @@ public class ConversationService {
     message.setText(text);
     Message saved = messageRepository.save(message);
 
-    MessageDto dto = toDto(saved);
+    Profile sender = profileRepository.findById(userId).orElse(null);
+    String senderName = sender != null && sender.getDisplayName() != null ? sender.getDisplayName() : "Someone";
+    MessageDto dto = toDto(saved, senderName);
     messagingTemplate.convertAndSend("/topic/chat." + conversationId, dto);
+    if (otherUser != null) {
+      String preview = summarizeLastMessage(text);
+      Map<String, Object> data = new HashMap<>();
+      data.put("pushType", "CHAT");
+      data.put("conversationId", conversationId);
+      data.put("senderId", userId);
+      pushDeliveryService.sendToUser(otherUser, "New message from " + senderName, preview, data);
+    }
     return dto;
   }
 
@@ -205,7 +324,14 @@ public class ConversationService {
   }
 
   public MessageDto toDto(Message message) {
-    return new MessageDto(message.getId(), message.getConversationId(), message.getSenderId(), message.getText(),
+    String senderName = profileRepository.findById(message.getSenderId())
+        .map(Profile::getDisplayName)
+        .orElse(null);
+    return toDto(message, senderName);
+  }
+
+  private MessageDto toDto(Message message, String senderName) {
+    return new MessageDto(message.getId(), message.getConversationId(), message.getSenderId(), senderName, message.getText(),
         message.getCreatedAt());
   }
 

@@ -9,5 +9,6 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
   List<ConversationMember> findByConversationIdIn(List<Long> conversationIds);
   boolean existsByConversationIdAndUserId(Long conversationId, Long userId);
   long countByConversationId(Long conversationId);
+  void deleteByConversationId(Long conversationId);
   void deleteByConversationIdAndUserId(Long conversationId, Long userId);
 }

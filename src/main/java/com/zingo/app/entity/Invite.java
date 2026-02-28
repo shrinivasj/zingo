@@ -12,9 +12,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -26,9 +23,6 @@ import org.hibernate.type.SqlTypes;
       @Index(name = "idx_invite_to", columnList = "toUserId")
     }
 )
-@Getter
-@Setter
-@NoArgsConstructor
 public class Invite {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +40,7 @@ public class Invite {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.VARCHAR)
   @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
-  private InviteStatus status;
+  private com.zingo.app.entity.InviteStatus status;
 
   @Column(nullable = false)
   private Instant createdAt;
@@ -64,5 +58,61 @@ public class Invite {
   @PreUpdate
   public void onUpdate() {
     updatedAt = Instant.now();
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getFromUserId() {
+    return fromUserId;
+  }
+
+  public void setFromUserId(Long fromUserId) {
+    this.fromUserId = fromUserId;
+  }
+
+  public Long getToUserId() {
+    return toUserId;
+  }
+
+  public void setToUserId(Long toUserId) {
+    this.toUserId = toUserId;
+  }
+
+  public Long getShowtimeId() {
+    return showtimeId;
+  }
+
+  public void setShowtimeId(Long showtimeId) {
+    this.showtimeId = showtimeId;
+  }
+
+  public com.zingo.app.entity.InviteStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(com.zingo.app.entity.InviteStatus status) {
+    this.status = status;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(Instant updatedAt) {
+    this.updatedAt = updatedAt;
   }
 }

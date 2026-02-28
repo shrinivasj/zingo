@@ -34,4 +34,28 @@ public class Conversation {
       createdAt = Instant.now();
     }
   }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getShowtimeId() {
+    return showtimeId;
+  }
+
+  public void setShowtimeId(Long showtimeId) {
+    this.showtimeId = showtimeId;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
 }

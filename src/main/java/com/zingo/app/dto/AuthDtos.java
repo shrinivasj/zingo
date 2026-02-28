@@ -13,6 +13,20 @@ public class AuthDtos {
 
   public record LoginRequest(@Email @NotBlank String email, @NotBlank String password) {}
 
+
+  public record EmailOtpSendRequest(@Email @NotBlank String email) {}
+
+  public record EmailOtpSendResponse(
+      String email,
+      int expiresInSeconds,
+      int resendInSeconds,
+      String devCode) {}
+
+  public record EmailOtpVerifyRequest(
+      @Email @NotBlank String email,
+      @NotBlank @Size(min = 6, max = 6) String code,
+      @Size(max = 80) String displayName) {}
+
   public record AuthResponse(String token, UserDto user) {}
 
   public record UserDto(

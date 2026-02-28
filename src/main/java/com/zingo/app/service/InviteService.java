@@ -114,6 +114,18 @@ public class InviteService {
     invite.setStatus(InviteStatus.ACCEPTED);
     Invite saved = inviteRepository.save(invite);
     Long conversationId = conversationService.openConversation(invite.getShowtimeId(), invite.getFromUserId(), userId);
+
+    Profile accepterProfile = profileRepository.findById(userId).orElse(null);
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("type", "INVITE_ACCEPTED");
+    payload.put("conversationId", conversationId);
+    payload.put("inviteId", inviteId);
+    payload.put("fromUserId", userId);
+    payload.put("fromDisplayName", accepterProfile != null ? accepterProfile.getDisplayName() : "Someone");
+    payload.put("fromAvatarUrl", accepterProfile != null ? accepterProfile.getAvatarUrl() : null);
+    payload.put("showtimeId", invite.getShowtimeId());
+    notificationService.createAndSend(invite.getFromUserId(), NotificationType.SYSTEM, payload);
+
     return new InviteAcceptResponse(toDto(saved), conversationId);
   }
 

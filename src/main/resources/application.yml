@@ -3,9 +3,10 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3307/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
-    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:zingo}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:zingo}}
+    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:mysql://localhost:3306/zingo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:root}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:password}}
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -20,18 +21,44 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
 
 app:
   jwt:
-    secret: ${JWT_SECRET:dev-zingo-secret-change-me}
+    secret: ${JWT_SECRET:local-dev-jwt-secret-change-me-2026-please}
     expirationMinutes: 240
+  auth:
+    otp:
+      expirationMinutes: ${AUTH_OTP_EXPIRATION_MINUTES:10}
+      resendCooldownSeconds: ${AUTH_OTP_RESEND_COOLDOWN_SECONDS:45}
+      maxAttempts: ${AUTH_OTP_MAX_ATTEMPTS:5}
+      devExposeCode: ${AUTH_OTP_DEV_EXPOSE_CODE:true}
+      mail:
+        smtpEnabled: ${AUTH_OTP_MAIL_SMTP_ENABLED:false}
+        fromEmail: ${AUTH_OTP_FROM_EMAIL:no-reply@aurofly.local}
+        fromName: ${AUTH_OTP_FROM_NAME:Aurofly}
   performance:
     slowRequestMs: ${SLOW_REQUEST_MS:300}
   invites:
     dailyLimit: 5
     cooldownSeconds: 30
   lobby:
-    presenceTtlMinutes: 15
+    presenceTtlMinutes: 300
+  admin:
+    ownerUserIds: ${ADMIN_OWNER_USER_IDS:1}
+    overridesFile: ${ADMIN_OVERRIDES_FILE:config/application-admin-overrides.properties}
+  push:
+    fcmServerKey: ${FCM_SERVER_KEY:}
 
 scrape:
   enabled: true

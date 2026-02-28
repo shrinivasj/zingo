@@ -27,6 +27,11 @@ app:
     cooldownSeconds: 30
   lobby:
     presenceTtlMinutes: 15
+  admin:
+    ownerUserIds: ${ADMIN_OWNER_USER_IDS:}
+    overridesFile: ${ADMIN_OVERRIDES_FILE:config/application-admin-overrides.properties}
+  push:
+    fcmServerKey: ${FCM_SERVER_KEY:}
 
 scrape:
   enabled: ${SCRAPE_ENABLED:true}

@@ -25,18 +25,21 @@ public class NotificationService {
   private final EventRepository eventRepository;
   private final ProfileRepository profileRepository;
   private final SimpMessagingTemplate messagingTemplate;
+  private final PushDeliveryService pushDeliveryService;
 
   public NotificationService(
       NotificationRepository notificationRepository,
       ShowtimeRepository showtimeRepository,
       EventRepository eventRepository,
       ProfileRepository profileRepository,
-      SimpMessagingTemplate messagingTemplate) {
+      SimpMessagingTemplate messagingTemplate,
+      PushDeliveryService pushDeliveryService) {
     this.notificationRepository = notificationRepository;
     this.showtimeRepository = showtimeRepository;
     this.eventRepository = eventRepository;
     this.profileRepository = profileRepository;
     this.messagingTemplate = messagingTemplate;
+    this.pushDeliveryService = pushDeliveryService;
   }
 
   @Transactional
@@ -49,6 +52,8 @@ public class NotificationService {
 
     NotificationDto dto = toDto(notification);
     messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/notifications", dto);
+    pushDeliveryService.sendToUser(userId, buildTitle(type, dto.payload()), buildBody(type, dto.payload()),
+        buildData(type, dto.payload(), dto.id()));
     return dto;
   }
 
@@ -60,11 +65,8 @@ public class NotificationService {
 
   @Transactional
   public NotificationDto markRead(Long userId, Long id) {
-    Notification notification = notificationRepository.findById(id)
+    Notification notification = notificationRepository.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new com.zingo.app.exception.NotFoundException("Notification not found"));
-    if (!notification.getUserId().equals(userId)) {
-      return toDto(notification);
-    }
     if (notification.getReadAt() == null) {
       notification.setReadAt(Instant.now());
     }
@@ -137,5 +139,57 @@ public class NotificationService {
       }
     }
     return null;
+  }
+
+  private String buildTitle(NotificationType type, Map<String, Object> payload) {
+    if (type == NotificationType.INVITE) {
+      return "New Invite";
+    }
+    return "Aurofly";
+  }
+
+  private String buildBody(NotificationType type, Map<String, Object> payload) {
+    if (payload == null) {
+      return "You have a new update";
+    }
+    String payloadType = String.valueOf(payload.get("type"));
+    if ("TREK_JOIN_REQUEST".equals(payloadType)) {
+      String from = String.valueOf(payload.getOrDefault("fromDisplayName", "Someone"));
+      return from + " requested to join your trek";
+    }
+    if ("TREK_JOIN_APPROVED".equals(payloadType)) {
+      return "Your trek request was approved";
+    }
+    if ("TREK_JOIN_DECLINED".equals(payloadType)) {
+      return "Your trek request was declined";
+    }
+    if (type == NotificationType.INVITE) {
+      String from = String.valueOf(payload.getOrDefault("fromDisplayName", "Someone"));
+      String event = String.valueOf(payload.getOrDefault("eventTitle", "a show"));
+      return from + " invited you for " + event;
+    }
+    if ("INVITE_ACCEPTED".equals(String.valueOf(payload.get("type")))) {
+      String from = String.valueOf(payload.getOrDefault("fromDisplayName", "Someone"));
+      return from + " accepted your invite";
+    }
+    return "You have a new update";
+  }
+
+  private Map<String, Object> buildData(NotificationType type, Map<String, Object> payload, Long notificationId) {
+    Map<String, Object> data = new LinkedHashMap<>();
+    data.put("pushType", type != null ? type.name() : "SYSTEM");
+    data.put("notificationId", notificationId);
+    if (payload != null) {
+      if (payload.get("inviteId") != null) {
+        data.put("inviteId", payload.get("inviteId"));
+      }
+      if (payload.get("showtimeId") != null) {
+        data.put("showtimeId", payload.get("showtimeId"));
+      }
+      if (payload.get("conversationId") != null) {
+        data.put("conversationId", payload.get("conversationId"));
+      }
+    }
+    return data;
   }
 }

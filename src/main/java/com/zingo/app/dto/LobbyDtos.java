@@ -17,7 +17,15 @@ public class LobbyDtos {
   public record LobbyUsersResponse(
       Long showtimeId,
       long total,
-      List<LobbyUserDto> users) {}
+      List<LobbyUserDto> users,
+      String eventType) {}
+
+  public record ActiveLobbyDto(
+      Long showtimeId,
+      String eventTitle,
+      String venueName,
+      Instant startsAt,
+      long liveCount) {}
 
   public record LobbyPresenceUpdate(Long showtimeId, long count, Instant updatedAt) {}
 }

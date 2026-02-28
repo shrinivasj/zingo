@@ -95,5 +95,91 @@ public class DataSeeder implements CommandLineRunner {
         showtimeRepository.save(showtime);
       }
     }
+
+    List<Venue> cafes = new ArrayList<>();
+    String[] cafeNames = {
+        "Bean Street Cafe",
+        "Roast & Ritual",
+        "Lakeside Coffee House"
+    };
+    for (String name : cafeNames) {
+      Venue venue = new Venue();
+      venue.setCityId(city.getId());
+      venue.setName(name);
+      venue.setPostalCode(city.getPostalCode());
+      cafes.add(venueRepository.save(venue));
+    }
+
+    List<Event> cafeEvents = new ArrayList<>();
+    String[] cafeTitles = {
+        "Coffee Catch-up",
+        "Brunch Meetup",
+        "Evening Chai Plan"
+    };
+    for (String title : cafeTitles) {
+      Event event = new Event();
+      event.setType(EventType.CAFE);
+      event.setTitle(title);
+      event.setPosterUrl(null);
+      cafeEvents.add(eventRepository.save(event));
+    }
+
+    for (int day = 0; day < 7; day++) {
+      LocalDate date = start.plusDays(day);
+      for (int e = 0; e < cafeEvents.size(); e++) {
+        Event event = cafeEvents.get(e);
+        Venue venue = cafes.get((day + e) % cafes.size());
+        LocalDateTime meetupDateTime = LocalDateTime.of(date, LocalTime.of(17 + (e % 3), 30));
+        Showtime showtime = new Showtime();
+        showtime.setEventId(event.getId());
+        showtime.setVenueId(venue.getId());
+        showtime.setStartsAt(Instant.from(meetupDateTime.atZone(ZoneOffset.UTC)));
+        showtime.setFormat(ShowFormat.GENERAL);
+        showtimeRepository.save(showtime);
+      }
+    }
+
+    List<Venue> trekSpots = new ArrayList<>();
+    String[] trekSpotNames = {
+        "Sinhagad Base Camp",
+        "Rajmachi Trail Point",
+        "Lohagad Entry Gate"
+    };
+    for (String name : trekSpotNames) {
+      Venue venue = new Venue();
+      venue.setCityId(city.getId());
+      venue.setName(name);
+      venue.setPostalCode(city.getPostalCode());
+      trekSpots.add(venueRepository.save(venue));
+    }
+
+    List<Event> trekEvents = new ArrayList<>();
+    String[] trekTitles = {
+        "Sunrise Trek Squad",
+        "Weekend Trek Crew",
+        "Monsoon Trek Plan"
+    };
+    for (String title : trekTitles) {
+      Event event = new Event();
+      event.setType(EventType.TREK);
+      event.setTitle(title);
+      event.setPosterUrl(null);
+      trekEvents.add(eventRepository.save(event));
+    }
+
+    for (int day = 0; day < 7; day++) {
+      LocalDate date = start.plusDays(day);
+      for (int e = 0; e < trekEvents.size(); e++) {
+        Event event = trekEvents.get(e);
+        Venue venue = trekSpots.get((day + e) % trekSpots.size());
+        LocalDateTime trekDateTime = LocalDateTime.of(date, LocalTime.of(6 + (e % 2), 0));
+        Showtime showtime = new Showtime();
+        showtime.setEventId(event.getId());
+        showtime.setVenueId(venue.getId());
+        showtime.setStartsAt(Instant.from(trekDateTime.atZone(ZoneOffset.UTC)));
+        showtime.setFormat(ShowFormat.GENERAL);
+        showtimeRepository.save(showtime);
+      }
+    }
   }
 }

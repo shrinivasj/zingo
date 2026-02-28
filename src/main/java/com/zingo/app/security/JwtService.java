@@ -3,9 +3,9 @@ package com.zingo.app.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,22 +18,18 @@ public class JwtService {
 
   public JwtService(@Value("${app.jwt.secret}") String secret,
       @Value("${app.jwt.expirationMinutes}") long expirationMinutes) {
-    byte[] keyBytes = toKeyBytes(secret);
+    if (secret == null || secret.isBlank()) {
+      throw new IllegalStateException("JWT secret must be configured");
+    }
+    if ("dev-zingo-secret-change-me".equals(secret)) {
+      throw new IllegalStateException("Refusing insecure JWT secret");
+    }
+    byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+    if (keyBytes.length < 32) {
+      throw new IllegalStateException("JWT secret must be at least 32 bytes");
+    }
     this.key = Keys.hmacShaKeyFor(keyBytes);
     this.expirationMinutes = expirationMinutes;
-  }
-
-  private byte[] toKeyBytes(String secret) {
-    byte[] raw = secret.getBytes();
-    if (raw.length < 32) {
-      byte[] padded = new byte[32];
-      for (int i = 0; i < padded.length; i++) {
-        padded[i] = raw[i % raw.length];
-      }
-      raw = padded;
-    }
-    String base64 = java.util.Base64.getEncoder().encodeToString(raw);
-    return Decoders.BASE64.decode(base64);
   }
 
   public String generateToken(Long userId, String email) {

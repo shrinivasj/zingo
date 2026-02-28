@@ -1,0 +1,2 @@
+ALTER TABLE profiles
+  ADD COLUMN trek_host_enabled TINYINT(1) NOT NULL DEFAULT 0;

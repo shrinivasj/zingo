@@ -46,4 +46,44 @@ public class Message {
       createdAt = Instant.now();
     }
   }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getConversationId() {
+    return conversationId;
+  }
+
+  public void setConversationId(Long conversationId) {
+    this.conversationId = conversationId;
+  }
+
+  public Long getSenderId() {
+    return senderId;
+  }
+
+  public void setSenderId(Long senderId) {
+    this.senderId = senderId;
+  }
+
+  public String getText() {
+    return text;
+  }
+
+  public void setText(String text) {
+    this.text = text;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(Instant createdAt) {
+    this.createdAt = createdAt;
+  }
 }

@@ -51,9 +51,10 @@ public class DiscoveryController {
   @GetMapping("/showtimes")
   public List<ShowtimeDto> showtimes(@RequestParam(required = false, name = "eventId") Long eventId,
       @RequestParam(required = false, name = "venueId") Long venueId,
+      @RequestParam(required = false, name = "cityId") Long cityId,
       @RequestParam(required = false, name = "city") String cityName,
       @RequestParam(required = false, name = "postalCode") String postalCode) {
-    Long resolvedCityId = discoveryService.resolveCityId(cityName, postalCode);
+    Long resolvedCityId = cityId != null ? cityId : discoveryService.resolveCityId(cityName, postalCode);
     return discoveryService.listShowtimes(eventId, venueId, resolvedCityId).stream().map(this::toShowtimeDto).toList();
   }
 

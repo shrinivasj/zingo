@@ -1,5 +1,6 @@
 package com.zingo.app.controller;
 
+import com.zingo.app.dto.ProfileDtos.ProfileMeResponse;
 import com.zingo.app.dto.ProfileDtos.ProfileUpdateRequest;
 import com.zingo.app.entity.Profile;
 import com.zingo.app.service.ProfileService;
@@ -20,12 +21,25 @@ public class ProfileController {
   }
 
   @GetMapping("/me")
-  public Profile me() {
-    return profileService.getCurrentProfile();
+  public ProfileMeResponse me() {
+    return toProfileMeResponse(profileService.getCurrentProfile());
   }
 
   @PutMapping("/me")
-  public Profile update(@Valid @RequestBody ProfileUpdateRequest request) {
-    return profileService.update(request);
+  public ProfileMeResponse update(@Valid @RequestBody ProfileUpdateRequest request) {
+    return toProfileMeResponse(profileService.update(request));
+  }
+
+  private ProfileMeResponse toProfileMeResponse(Profile profile) {
+    return new ProfileMeResponse(
+        profile.getUserId(),
+        profile.getDisplayName(),
+        profile.getAvatarUrl(),
+        profile.getE2eePublicKey(),
+        profile.getE2eeEncryptedPrivateKey(),
+        profile.getE2eeKeySalt(),
+        profile.isTrekHostEnabled(),
+        profile.getBioShort(),
+        profile.getPersonalityTags());
   }
 }

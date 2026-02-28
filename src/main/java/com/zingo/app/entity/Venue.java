@@ -40,4 +40,68 @@ public class Venue {
 
   @Column(length = 500)
   private String sourceUrl;
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public Long getCityId() {
+    return cityId;
+  }
+
+  public void setCityId(Long cityId) {
+    this.cityId = cityId;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getAddress() {
+    return address;
+  }
+
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  public String getPostalCode() {
+    return postalCode;
+  }
+
+  public void setPostalCode(String postalCode) {
+    this.postalCode = postalCode;
+  }
+
+  public String getSource() {
+    return source;
+  }
+
+  public void setSource(String source) {
+    this.source = source;
+  }
+
+  public String getSourceId() {
+    return sourceId;
+  }
+
+  public void setSourceId(String sourceId) {
+    this.sourceId = sourceId;
+  }
+
+  public String getSourceUrl() {
+    return sourceUrl;
+  }
+
+  public void setSourceUrl(String sourceUrl) {
+    this.sourceUrl = sourceUrl;
+  }
 }

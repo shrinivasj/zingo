@@ -34,6 +34,12 @@ public class ProfileService {
     if (request.e2eePublicKey() != null) {
       profile.setE2eePublicKey(request.e2eePublicKey());
     }
+    if (request.e2eeEncryptedPrivateKey() != null) {
+      profile.setE2eeEncryptedPrivateKey(request.e2eeEncryptedPrivateKey());
+    }
+    if (request.e2eeKeySalt() != null) {
+      profile.setE2eeKeySalt(request.e2eeKeySalt());
+    }
     if (request.bioShort() != null) {
       profile.setBioShort(request.bioShort());
     }

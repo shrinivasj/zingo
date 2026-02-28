@@ -19,23 +19,21 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
 
   @Override
   protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
-    try {
-      if (request instanceof ServletServerHttpRequest servletRequest) {
-        String token = servletRequest.getServletRequest().getParameter("token");
-        if (token == null) {
-          String auth = servletRequest.getServletRequest().getHeader("Authorization");
-          if (auth != null && auth.startsWith("Bearer ")) {
-            token = auth.substring(7);
-          }
-        }
-        if (token != null && !token.isBlank()) {
-          JwtService.JwtUser jwtUser = jwtService.parseToken(token);
-          return new StompPrincipal(String.valueOf(jwtUser.userId()));
-        }
-      }
-    } catch (Exception ignored) {
-      // fall through
+    if (!(request instanceof ServletServerHttpRequest servletRequest)) {
+      throw new IllegalArgumentException("Invalid websocket request");
     }
-    return new StompPrincipal("anonymous");
+    String token = servletRequest.getServletRequest().getParameter("token");
+    if (token == null) {
+      String auth = servletRequest.getServletRequest().getHeader("Authorization");
+      if (auth != null && auth.startsWith("Bearer ")) {
+        token = auth.substring(7);
+      }
+    }
+    if (token == null || token.isBlank()) {
+      throw new IllegalArgumentException("Missing websocket token");
+    }
+
+    JwtService.JwtUser jwtUser = jwtService.parseToken(token);
+    return new StompPrincipal(String.valueOf(jwtUser.userId()));
   }
 }

@@ -12,4 +12,5 @@ public interface InviteRepository extends JpaRepository<Invite, Long> {
   Optional<Invite> findTopByFromUserIdOrderByCreatedAtDesc(Long fromUserId);
   Optional<Invite> findByIdAndToUserId(Long id, Long toUserId);
   List<Invite> findByToUserIdAndStatus(Long toUserId, InviteStatus status);
+  List<Invite> findByShowtimeId(Long showtimeId);
 }
