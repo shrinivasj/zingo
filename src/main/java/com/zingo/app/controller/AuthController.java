@@ -6,6 +6,7 @@ import com.zingo.app.dto.AuthDtos.EmailOtpSendResponse;
 import com.zingo.app.dto.AuthDtos.EmailOtpVerifyRequest;
 import com.zingo.app.dto.AuthDtos.LoginRequest;
 import com.zingo.app.dto.AuthDtos.RegisterRequest;
+import com.zingo.app.dto.AuthDtos.SocialLoginRequest;
 import com.zingo.app.dto.AuthDtos.UserDto;
 import com.zingo.app.service.AuthService;
 import jakarta.validation.Valid;
@@ -42,6 +43,11 @@ public class AuthController {
   @PostMapping("/email-otp/verify")
   public AuthResponse verifyEmailOtp(@Valid @RequestBody EmailOtpVerifyRequest request) {
     return authService.verifyEmailOtp(request);
+  }
+
+  @PostMapping("/social")
+  public AuthResponse loginWithSocial(@Valid @RequestBody SocialLoginRequest request) {
+    return authService.loginWithSocial(request);
   }
 
   @GetMapping("/me")

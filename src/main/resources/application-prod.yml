@@ -20,6 +20,9 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expirationMinutes: 240
+  auth:
+    firebase:
+      projectId: ${AUTH_FIREBASE_PROJECT_ID:aurofly-76566}
   performance:
     slowRequestMs: ${SLOW_REQUEST_MS:300}
   invites:

@@ -10,6 +10,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
   @Query(
       "select c from Conversation c where c.id in (select m1.conversationId from ConversationMember m1 where m1.userId = :userA) "
           + "and c.id in (select m2.conversationId from ConversationMember m2 where m2.userId = :userB) "
+          + "and (select count(m3) from ConversationMember m3 where m3.conversationId = c.id) = 2 "
           + "order by c.createdAt desc, c.id desc")
   List<Conversation> findExistingByUsers(@Param("userA") Long userA, @Param("userB") Long userB);
 

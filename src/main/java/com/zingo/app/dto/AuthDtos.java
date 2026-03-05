@@ -27,6 +27,12 @@ public class AuthDtos {
       @NotBlank @Size(min = 6, max = 6) String code,
       @Size(max = 80) String displayName) {}
 
+  public record SocialLoginRequest(
+      @NotBlank String idToken,
+      @NotBlank String provider,
+      @Size(max = 80) String displayName,
+      @Size(max = 2048) String avatarUrl) {}
+
   public record AuthResponse(String token, UserDto user) {}
 
   public record UserDto(

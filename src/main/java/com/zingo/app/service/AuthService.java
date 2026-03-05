@@ -7,6 +7,7 @@ import com.zingo.app.dto.AuthDtos.EmailOtpSendResponse;
 import com.zingo.app.dto.AuthDtos.EmailOtpVerifyRequest;
 import com.zingo.app.dto.AuthDtos.LoginRequest;
 import com.zingo.app.dto.AuthDtos.RegisterRequest;
+import com.zingo.app.dto.AuthDtos.SocialLoginRequest;
 import com.zingo.app.dto.AuthDtos.UserDto;
 import com.zingo.app.entity.EmailOtpChallenge;
 import com.zingo.app.entity.Profile;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
   private static final String EMAIL_LOGIN_PURPOSE = "EMAIL_LOGIN";
+  private static final Set<String> ALLOWED_SOCIAL_PROVIDERS = Set.of("google.com", "apple.com");
 
   private final UserRepository userRepository;
   private final ProfileRepository profileRepository;
@@ -40,6 +43,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final EmailOtpSender emailOtpSender;
+  private final FirebaseTokenVerifier firebaseTokenVerifier;
   private final SecureRandom secureRandom = new SecureRandom();
   private final long otpExpirationMinutes;
   private final long otpResendCooldownSeconds;
@@ -53,6 +57,7 @@ public class AuthService {
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
       EmailOtpSender emailOtpSender,
+      FirebaseTokenVerifier firebaseTokenVerifier,
       @Value("${app.auth.otp.expirationMinutes}") long otpExpirationMinutes,
       @Value("${app.auth.otp.resendCooldownSeconds}") long otpResendCooldownSeconds,
       @Value("${app.auth.otp.maxAttempts}") int otpMaxAttempts,
@@ -63,6 +68,7 @@ public class AuthService {
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.emailOtpSender = emailOtpSender;
+    this.firebaseTokenVerifier = firebaseTokenVerifier;
     this.otpExpirationMinutes = otpExpirationMinutes;
     this.otpResendCooldownSeconds = otpResendCooldownSeconds;
     this.otpMaxAttempts = otpMaxAttempts;
@@ -178,6 +184,36 @@ public class AuthService {
     return new AuthResponse(token, toUserDto(pair.user(), pair.profile()));
   }
 
+  @Transactional
+  public AuthResponse loginWithSocial(SocialLoginRequest request) {
+    String requestedProvider = normalizeProvider(request.provider());
+    if (!ALLOWED_SOCIAL_PROVIDERS.contains(requestedProvider)) {
+      throw new BadRequestException("Unsupported social login provider");
+    }
+
+    FirebaseTokenVerifier.VerifiedFirebaseToken verifiedToken = firebaseTokenVerifier.verify(request.idToken().trim());
+    if (!requestedProvider.equals(verifiedToken.provider())) {
+      throw new BadRequestException("Firebase token provider does not match request");
+    }
+
+    String email = normalizeEmail(verifiedToken.email());
+    Instant now = Instant.now();
+    User user = userRepository.findByEmail(email)
+        .orElseGet(() -> createSocialUser(email, request.displayName(), verifiedToken.name(), now));
+    if (user.getEmailVerifiedAt() == null) {
+      user.setEmailVerifiedAt(now);
+      user = userRepository.save(user);
+    }
+
+    Object[] row = userRepository.findUserWithProfileById(user.getId())
+        .orElseThrow(() -> new NotFoundException("Profile not found"));
+    UserProfilePair pair = unpackUserProfile(row);
+    updateProfileFromSocial(pair.profile(), request.displayName(), verifiedToken.name(), request.avatarUrl(), verifiedToken.picture());
+
+    String token = jwtService.generateToken(pair.user().getId(), pair.user().getEmail());
+    return new AuthResponse(token, toUserDto(pair.user(), pair.profile()));
+  }
+
   public UserDto me() {
     JwtService.JwtUser jwtUser = SecurityUtil.currentJwtUser();
     if (jwtUser == null || jwtUser.userId() == null) {
@@ -222,6 +258,16 @@ public class AuthService {
     return user;
   }
 
+  private User createSocialUser(String email, String requestedDisplayName, String tokenName, Instant verifiedAt) {
+    User user = new User();
+    user.setEmail(email);
+    user.setPasswordHash(passwordEncoder.encode(randomBootstrapPassword()));
+    user.setEmailVerifiedAt(verifiedAt);
+    user = userRepository.save(user);
+    createProfile(user.getId(), defaultDisplayName(email, coalesceDisplayName(requestedDisplayName, tokenName)));
+    return user;
+  }
+
   private Profile createProfile(Long userId, String displayName) {
     Profile profile = new Profile();
     profile.setUserId(userId);
@@ -231,6 +277,28 @@ public class AuthService {
     profile.setTrekHostEnabled(false);
     profile.setPersonalityTags(Collections.emptyList());
     return profileRepository.save(profile);
+  }
+
+  private void updateProfileFromSocial(
+      Profile profile,
+      String requestedDisplayName,
+      String tokenName,
+      String requestedAvatarUrl,
+      String tokenAvatarUrl) {
+    boolean changed = false;
+    String effectiveDisplayName = coalesceDisplayName(requestedDisplayName, tokenName);
+    if ((profile.getDisplayName() == null || profile.getDisplayName().isBlank()) && effectiveDisplayName != null) {
+      profile.setDisplayName(defaultDisplayName("Aurofly User", effectiveDisplayName));
+      changed = true;
+    }
+    String avatarUrl = sanitizeAuthAvatar(firstNonBlank(requestedAvatarUrl, tokenAvatarUrl));
+    if ((profile.getAvatarUrl() == null || profile.getAvatarUrl().isBlank()) && avatarUrl != null) {
+      profile.setAvatarUrl(avatarUrl);
+      changed = true;
+    }
+    if (changed) {
+      profileRepository.save(profile);
+    }
   }
 
   private String normalizeEmail(String email) {
@@ -247,6 +315,25 @@ public class AuthService {
       return "Aurofly User";
     }
     return Character.toUpperCase(localPart.charAt(0)) + localPart.substring(1);
+  }
+
+  private String coalesceDisplayName(String preferred, String fallback) {
+    String value = firstNonBlank(preferred, fallback);
+    return value == null ? null : value.trim();
+  }
+
+  private String firstNonBlank(String first, String second) {
+    if (first != null && !first.isBlank()) {
+      return first;
+    }
+    if (second != null && !second.isBlank()) {
+      return second;
+    }
+    return null;
+  }
+
+  private String normalizeProvider(String provider) {
+    return provider == null ? "" : provider.trim().toLowerCase(Locale.ROOT);
   }
 
   private String generateOtpCode() {

@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,13 +36,14 @@ public class InviteService {
   private final SafetyService safetyService;
   private final NotificationService notificationService;
   private final ConversationService conversationService;
+  private final LobbyService lobbyService;
   private final int dailyLimit;
   private final int cooldownSeconds;
 
   public InviteService(InviteRepository inviteRepository, ShowtimeRepository showtimeRepository,
       EventRepository eventRepository,
       ProfileRepository profileRepository, SafetyService safetyService, NotificationService notificationService,
-      ConversationService conversationService,
+      ConversationService conversationService, LobbyService lobbyService,
       @Value("${app.invites.dailyLimit}") int dailyLimit,
       @Value("${app.invites.cooldownSeconds}") int cooldownSeconds) {
     this.inviteRepository = inviteRepository;
@@ -51,6 +53,7 @@ public class InviteService {
     this.safetyService = safetyService;
     this.notificationService = notificationService;
     this.conversationService = conversationService;
+    this.lobbyService = lobbyService;
     this.dailyLimit = dailyLimit;
     this.cooldownSeconds = cooldownSeconds;
   }
@@ -114,6 +117,7 @@ public class InviteService {
     invite.setStatus(InviteStatus.ACCEPTED);
     Invite saved = inviteRepository.save(invite);
     Long conversationId = conversationService.openConversation(invite.getShowtimeId(), invite.getFromUserId(), userId);
+    lobbyService.removeUsersFromLobby(invite.getShowtimeId(), List.of(invite.getFromUserId(), userId));
 
     Profile accepterProfile = profileRepository.findById(userId).orElse(null);
     Map<String, Object> payload = new HashMap<>();

@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS waitlist_signups (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  email VARCHAR(254) NOT NULL,
+  name VARCHAR(80),
+  ip VARCHAR(64),
+  user_agent VARCHAR(512),
+  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_waitlist_email (email)
+);
+

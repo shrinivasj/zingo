@@ -19,6 +19,7 @@ import com.zingo.app.security.SecurityUtil;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +82,25 @@ public class LobbyService {
     LobbyPresenceUpdate update = new LobbyPresenceUpdate(showtimeId, count, Instant.now());
     messagingTemplate.convertAndSend("/topic/lobby." + showtimeId, update);
     return update;
+  }
+
+  @Transactional
+  public void removeUsersFromLobby(Long showtimeId, Collection<Long> userIds) {
+    if (showtimeId == null || userIds == null || userIds.isEmpty()) {
+      return;
+    }
+    boolean changed = false;
+    for (Long userId : userIds) {
+      if (userId == null) {
+        continue;
+      }
+      changed = lobbyPresenceRepository.deleteByShowtimeIdAndUserId(showtimeId, userId) > 0 || changed;
+    }
+    if (changed) {
+      long count = lobbyPresenceRepository.countByShowtimeId(showtimeId);
+      LobbyPresenceUpdate update = new LobbyPresenceUpdate(showtimeId, count, Instant.now());
+      messagingTemplate.convertAndSend("/topic/lobby." + showtimeId, update);
+    }
   }
 
   public LobbyUsersResponse listUsers(Long showtimeId, int page, int size) {
